@@ -29,7 +29,7 @@ const STABLE_URLS = new Set(
     "https://www.makemytrip.com/hotels/new_delhi_and_ncr-hotels.html",
     "https://www.booking.com/city/in/new-delhi.html",
     "https://www.rome2rio.com/s/Delhi",
-  ].map((u) => u.toLowerCase()),
+  ].map((u) => u.toLowerCase().replace(/\/$/, "")),
 );
 
 function searchUrlFor(kind: string, name: string): string {
@@ -53,12 +53,8 @@ export function rewriteLinks(html: string): string {
       if (!name) return card;
       const fallback = searchUrlFor(kind.toLowerCase(), name);
       return card.replace(/href\s*=\s*("|')(.*?)\1/gi, (m, _q, url: string) => {
-        const clean = String(url).trim();
-        return STABLE_URLS.has(clean.toLowerCase().replace(/\/$/, "").concat(""))
-          ? m
-          : STABLE_URLS.has(clean.toLowerCase())
-            ? m
-            : `href="${fallback}"`;
+        const clean = String(url).trim().toLowerCase().replace(/\/$/, "");
+        return STABLE_URLS.has(clean) ? m : `href="${fallback}"`;
       });
     },
   );
