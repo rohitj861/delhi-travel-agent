@@ -25,37 +25,56 @@ const STABLE_URLS = new Set(
     "https://www.delhimetrorail.com/",
     "https://lbb.in/delhi",
     "https://www.zomato.com/ncr",
-    "https://www.swiggy.com/city/delhi/dineout",
-    "https://www.makemytrip.com/hotels/new_delhi_and_ncr-hotels.html",
+    "https://www.google.com/maps/search/?api=1&query=hotels+in+delhi",
     "https://www.booking.com/city/in/new-delhi.html",
-    "https://www.rome2rio.com/s/Delhi",
   ].map((u) => u.toLowerCase().replace(/\/$/, "")),
 );
 
-function searchUrlFor(kind: string, name: string): string {
-  const q = encodeURIComponent(`${name} Delhi NCR`);
-  if (kind === "restaurant-card") return `https://www.zomato.com/ncr/restaurants?q=${q}`;
+function searchUrlFor(kind: string, name: string, area: string): string {
+  const place = [name, area, "Delhi NCR"].filter(Boolean).join(", ");
+  // Google Maps place search resolves to the exact venue and never 404s.
+  const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
+  if (kind === "restaurant-card")
+    return `https://www.zomato.com/ncr/restaurants?q=${encodeURIComponent(name)}`;
   if (kind === "shopping-card") return `https://lbb.in/delhi/search/?q=${encodeURIComponent(name)}`;
-  return `https://www.google.com/search?q=${q}`;
+  return maps;
+}
+
+/** Splits the HTML into card chunks, tolerating nested <div>s inside a card. */
+function splitCards(html: string): string[] {
+  const starts: number[] = [];
+  const re = /<div\s+class="(?:destination-card|restaurant-card|shopping-card)"/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) starts.push(m.index);
+  if (starts.length === 0) return [html];
+  const chunks: string[] = [];
+  if (starts[0]! > 0) chunks.push(html.slice(0, starts[0]));
+  for (let i = 0; i < starts.length; i++)
+    chunks.push(html.slice(starts[i]!, starts[i + 1] ?? html.length));
+  return chunks;
 }
 
 /**
  * Replaces model-invented deep links (the usual 404 source) with either a known
- * stable landing page or a search URL built from the card's title.
+ * stable landing page or a precise search URL built from the card's title/area.
  */
 export function rewriteLinks(html: string): string {
-  return html.replace(
-    /<div\s+class="(destination-card|restaurant-card|shopping-card)"[\s\S]*?<\/div>/gi,
-    (card, kind: string) => {
-      const name = (card.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] ?? "")
-        .replace(/<[^>]*>/g, "")
-        .trim();
-      if (!name) return card;
-      const fallback = searchUrlFor(kind.toLowerCase(), name);
-      return card.replace(/href\s*=\s*("|')(.*?)\1/gi, (m, _q, url: string) => {
+  return splitCards(html)
+    .map((chunk) => {
+      const kind = chunk
+        .match(/^<div\s+class="(destination-card|restaurant-card|shopping-card)"/i)?.[1]
+        ?.toLowerCase();
+      if (!kind) return chunk;
+      const text = (sel: RegExp) =>
+        (chunk.match(sel)?.[1] ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+      const name = text(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+      if (!name) return chunk;
+      const area = text(/<[^>]*class="[^"]*(?:area|metro|location)[^"]*"[^>]*>([\s\S]*?)<\//i);
+      const fallback = searchUrlFor(kind, name, area);
+      return chunk.replace(/href\s*=\s*("|')(.*?)\1/gi, (m2, _q, url: string) => {
         const clean = String(url).trim().toLowerCase().replace(/\/$/, "");
-        return STABLE_URLS.has(clean) ? m : `href="${fallback}"`;
+        return STABLE_URLS.has(clean) ? m2 : `href="${fallback}"`;
       });
-    },
-  );
+    })
+    .join("");
 }
