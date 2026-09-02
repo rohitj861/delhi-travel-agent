@@ -59,7 +59,7 @@ function splitCards(html: string): string[] {
  * stable landing page or a precise search URL built from the card's title/area.
  */
 export function rewriteLinks(html: string): string {
-  return splitCards(html)
+  const rewritten = splitCards(html)
     .map((chunk) => {
       const kind = chunk
         .match(/^<div\s+class="(destination-card|restaurant-card|shopping-card)"/i)?.[1]
@@ -77,4 +77,10 @@ export function rewriteLinks(html: string): string {
       });
     })
     .join("");
+
+  // Open every card link in a new tab so external sites never replace the app.
+  return rewritten.replace(/<a\b([^>]*)>/gi, (match, attrs: string) => {
+    if (/\btarget\s*=/i.test(attrs)) return match;
+    return `<a target="_blank" rel="noopener noreferrer"${attrs}>`;
+  });
 }
