@@ -57,13 +57,42 @@ const SUGGESTIONS = [
 function Index() {
   const ask = useServerFn(askDelhiAgent);
   const save = useServerFn(saveTravelQuery);
+  const storeTrip = useServerFn(saveTrip);
   const { user } = useSession();
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tripFormFor, setTripFormFor] = useState<number | null>(null);
+  const [tripName, setTripName] = useState("");
+  const [tripSaving, setTripSaving] = useState(false);
+  const [tripError, setTripError] = useState<string | null>(null);
+  const [savedTrips, setSavedTrips] = useState<Record<number, string>>({});
   const endRef = useRef<HTMLDivElement>(null);
+
+  async function handleSaveTrip(index: number) {
+    const name = tripName.trim();
+    if (!name) {
+      setTripError("Please give this trip a name.");
+      return;
+    }
+    setTripSaving(true);
+    setTripError(null);
+    try {
+      const itinerary = messages[index]?.content ?? "";
+      const destination = messages[index - 1]?.content?.slice(0, 200);
+      await storeTrip({ data: { trip_name: name, destination, itinerary } });
+      setSavedTrips((prev) => ({ ...prev, [index]: name }));
+      setTripFormFor(null);
+      setTripName("");
+    } catch {
+      setTripError("Could not save this trip. Please try again.");
+    } finally {
+      setTripSaving(false);
+    }
+  }
+
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
