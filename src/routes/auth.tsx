@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, TrainFront } from "lucide-react";
+import { CheckCircle2, Loader2, TrainFront } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ function AuthPage() {
         });
         if (error) setError(friendly(error.message));
         else if (!data.session)
-          setNotice("Account created. Check your email to confirm before signing in.");
+          setNotice("Check your email to confirm your account before logging in.");
         else navigate({ to: "/", replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
