@@ -63,7 +63,9 @@ export function rewriteLinks(html: string): string {
   const rewritten = splitCards(html)
     .map((chunk) => {
       const kind = chunk
-        .match(/^<div\s+class="(destination-card|restaurant-card|shopping-card)"/i)?.[1]
+        .match(
+          /^<div\s+class="(destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/i,
+        )?.[1]
         ?.toLowerCase();
       if (!kind) return chunk;
       const text = (sel: RegExp) =>
