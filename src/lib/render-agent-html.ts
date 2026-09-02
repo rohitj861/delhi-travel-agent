@@ -43,7 +43,8 @@ function searchUrlFor(kind: string, name: string, area: string): string {
 /** Splits the HTML into card chunks, tolerating nested <div>s inside a card. */
 function splitCards(html: string): string[] {
   const starts: number[] = [];
-  const re = /<div\s+class="(?:destination-card|restaurant-card|shopping-card)"/gi;
+  const re =
+    /<div\s+class="(?:destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) starts.push(m.index);
   if (starts.length === 0) return [html];
