@@ -34,7 +34,15 @@ function safeHref(value: string): string | null {
  * attributes (href limited to http(s)). Prevents script/handler injection.
  */
 export function sanitize(html: string): string {
-  return html.replace(/<\/?([a-zA-Z0-9-]+)((?:"[^"]*"|'[^']*'|[^>])*)>/g, (_m, rawTag, rawAttrs) => {
+  // Drop dangerous elements together with their text contents first.
+  const stripped = html.replace(
+    /<\s*(script|style|iframe|object|embed|svg|math|template)\b[\s\S]*?<\s*\/\s*\1\s*>/gi,
+    "",
+  );
+  return stripped.replace(
+    /<\/?([a-zA-Z0-9-]+)((?:"[^"]*"|'[^']*'|[^>])*)>/g,
+    (_m, rawTag, rawAttrs) => {
+
     const tag = String(rawTag).toLowerCase();
     if (!ALLOWED_TAGS.has(tag)) return "";
     if (_m.startsWith("</")) return `</${tag}>`;
