@@ -136,11 +136,23 @@ function Index() {
                 size="sm"
                 className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
               >
+                <Link to="/trips">
+                  <Map className="h-4 w-4" />
+                  My Trips
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
                 <Link to="/history">
                   <History className="h-4 w-4" />
                   My questions
                 </Link>
               </Button>
+
               <Button
                 asChild
                 variant="secondary"
