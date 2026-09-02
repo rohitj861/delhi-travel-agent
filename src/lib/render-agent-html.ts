@@ -2,7 +2,7 @@
 export function splitReply(raw: string): { summary: string; html: string } {
   const cleaned = raw.replace(/```html/gi, "").replace(/```/g, "").trim();
   const idx = cleaned.search(
-    /<div\s+class="(card-grid|destination-card|restaurant-card|shopping-card)"/i,
+    /<div\s+class="(card-grid|destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/i,
   );
   if (idx === -1) return { summary: cleaned, html: "" };
   return { summary: cleaned.slice(0, idx).trim(), html: rewriteLinks(sanitize(cleaned.slice(idx))) };
@@ -43,7 +43,8 @@ function searchUrlFor(kind: string, name: string, area: string): string {
 /** Splits the HTML into card chunks, tolerating nested <div>s inside a card. */
 function splitCards(html: string): string[] {
   const starts: number[] = [];
-  const re = /<div\s+class="(?:destination-card|restaurant-card|shopping-card)"/gi;
+  const re =
+    /<div\s+class="(?:destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) starts.push(m.index);
   if (starts.length === 0) return [html];
@@ -62,7 +63,9 @@ export function rewriteLinks(html: string): string {
   const rewritten = splitCards(html)
     .map((chunk) => {
       const kind = chunk
-        .match(/^<div\s+class="(destination-card|restaurant-card|shopping-card)"/i)?.[1]
+        .match(
+          /^<div\s+class="(destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/i,
+        )?.[1]
         ?.toLowerCase();
       if (!kind) return chunk;
       const text = (sel: RegExp) =>

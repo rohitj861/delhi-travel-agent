@@ -38,6 +38,8 @@ const SUGGESTIONS = [
   "Best Mughlai dinner near Khan Market",
   "Markets for handicrafts and handlooms",
   "Where to stay in South Delhi under ₹6,000",
+  "Plan a 3-day Delhi trip for a first-time visitor",
+  "Connaught Place to Humayun's Tomb by Metro",
 ];
 
 function Index() {
