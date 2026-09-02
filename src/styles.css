@@ -193,6 +193,12 @@
   .agent-cards .restaurant-card { border-top-color: var(--color-saffron); }
   .agent-cards .shopping-card { border-top-color: var(--color-indigo-deep); }
 
+  .agent-cards .itinerary-card,
+  .agent-cards .route-card {
+    grid-column: 1 / -1;
+    border-top-color: var(--color-indigo-deep);
+  }
+
   .agent-cards h3 {
     font-family: var(--font-display);
     font-size: 1.15rem;
