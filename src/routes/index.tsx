@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, Send, TrainFront } from "lucide-react";
+import { Compass, Loader2, Send, TrainFront, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askDelhiAgent } from "@/lib/delhi-agent.functions";
 import { splitReply } from "@/lib/render-agent-html";
+import { useSession } from "@/hooks/use-session";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,6 +41,8 @@ const SUGGESTIONS = [
 
 function Index() {
   const ask = useServerFn(askDelhiAgent);
+  const { user } = useSession();
+
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,10 +76,35 @@ function Index() {
     <div className="min-h-screen bg-background">
       <header className="hero-surface text-primary-foreground">
         <div className="mx-auto max-w-4xl px-5 py-12">
+          <nav className="mb-6 flex items-center justify-end gap-2">
+            {user ? (
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
+                <Link to="/account">
+                  <UserRound className="h-4 w-4" />
+                  <span className="max-w-[12rem] truncate">{user.email}</span>
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
+                <Link to="/auth">Login / Sign up</Link>
+              </Button>
+            )}
+          </nav>
           <p className="flex items-center gap-2 text-sm uppercase tracking-[0.25em] opacity-80">
             <TrainFront className="h-4 w-4" /> Metro-first guidance
           </p>
           <h1 className="mt-3 text-4xl font-normal sm:text-5xl">Delhi NCR Travel Concierge</h1>
+
           <p className="mt-3 max-w-2xl text-base opacity-90">
             Heritage, street food, markets, stays and transit across Old &amp; New Delhi, Gurugram
             and Noida — every recommendation with its nearest Metro station and line.
