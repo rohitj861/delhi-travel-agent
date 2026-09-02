@@ -2,7 +2,7 @@
 export function splitReply(raw: string): { summary: string; html: string } {
   const cleaned = raw.replace(/```html/gi, "").replace(/```/g, "").trim();
   const idx = cleaned.search(
-    /<div\s+class="(card-grid|destination-card|restaurant-card|shopping-card)"/i,
+    /<div\s+class="(card-grid|destination-card|restaurant-card|shopping-card|itinerary-card|route-card)"/i,
   );
   if (idx === -1) return { summary: cleaned, html: "" };
   return { summary: cleaned.slice(0, idx).trim(), html: rewriteLinks(sanitize(cleaned.slice(idx))) };
