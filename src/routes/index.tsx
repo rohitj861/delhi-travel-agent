@@ -214,6 +214,67 @@ function Index() {
                 {html && (
                   <div className="agent-cards" dangerouslySetInnerHTML={{ __html: html }} />
                 )}
+                {user && m.content.includes("itinerary-card") && (
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    {savedTrips[i] ? (
+                      <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-primary" />
+                        Saved as “{savedTrips[i]}”.
+                        <Link to="/trips" className="underline">
+                          View My Trips
+                        </Link>
+                      </p>
+                    ) : tripFormFor === i ? (
+                      <form
+                        className="flex flex-wrap items-center gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveTrip(i);
+                        }}
+                      >
+                        <Input
+                          autoFocus
+                          value={tripName}
+                          onChange={(e) => setTripName(e.target.value)}
+                          placeholder="Name this trip (e.g. Old Delhi day out)"
+                          aria-label="Trip name"
+                          className="max-w-xs"
+                        />
+                        <Button type="submit" size="sm" disabled={tripSaving}>
+                          {tripSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setTripFormFor(null);
+                            setTripError(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        {tripError && (
+                          <span className="w-full text-sm text-destructive">{tripError}</span>
+                        )}
+                      </form>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setTripFormFor(i);
+                          setTripName("");
+                          setTripError(null);
+                        }}
+                      >
+                        <BookmarkPlus className="h-4 w-4" />
+                        Save this trip
+                      </Button>
+                    )}
+                  </div>
+                )}
+
               </article>
             );
           })}
