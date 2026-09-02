@@ -62,10 +62,12 @@ export function sanitize(html: string): string {
         attrs.push(`${name}="${value.replace(/[^a-zA-Z _-]/g, "")}"`);
       }
     }
-    const selfClosing = tag === "br" ? " /" : "";
-    return `<${tag}${attrs.length ? " " + attrs.join(" ") : ""}${selfClosing}>`;
-  });
+      const selfClosing = tag === "br" ? " /" : "";
+      return `<${tag}${attrs.length ? " " + attrs.join(" ") : ""}${selfClosing}>`;
+    },
+  );
 }
+
 
 
 /** URLs known to resolve — deep links outside this list are replaced with searches. */
