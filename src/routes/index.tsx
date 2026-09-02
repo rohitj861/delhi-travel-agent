@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, Send, TrainFront } from "lucide-react";
+import { Compass, Loader2, Send, TrainFront, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askDelhiAgent } from "@/lib/delhi-agent.functions";
 import { splitReply } from "@/lib/render-agent-html";
+import { useSession } from "@/hooks/use-session";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
