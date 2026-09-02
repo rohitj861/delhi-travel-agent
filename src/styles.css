@@ -174,7 +174,9 @@
 
   .agent-cards .destination-card,
   .agent-cards .restaurant-card,
-  .agent-cards .shopping-card {
+  .agent-cards .shopping-card,
+  .agent-cards .itinerary-card,
+  .agent-cards .route-card {
     background-color: var(--color-card);
     color: var(--color-card-foreground);
     border: 1px solid var(--color-border);
