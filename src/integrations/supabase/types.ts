@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_rate_limits: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: string
+          request_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       travel_queries: {
         Row: {
           answer: string
@@ -43,7 +70,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_ai_rate_limit: {
+        Args: { _bucket_key: string; _limit: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

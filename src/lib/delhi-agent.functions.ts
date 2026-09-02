@@ -30,6 +30,9 @@ const messageSchema = z.object({
   content: z.string().min(1).max(8000),
 });
 
+/** Hourly per-caller cap on AI requests (signed-in user id, else client IP). */
+const AI_HOURLY_LIMIT = 30;
+
 export const askDelhiAgent = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z.object({ messages: z.array(messageSchema).min(1).max(24) }).parse(data),
@@ -37,6 +40,36 @@ export const askDelhiAgent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured.");
+
+    // Abuse protection: the endpoint is intentionally usable by anonymous
+    // visitors, so throttle per signed-in user when possible, else per IP.
+    try {
+      const { getRequestHeader, getRequestIP } = await import("@tanstack/react-start/server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      let bucket: string | undefined;
+      const authHeader = getRequestHeader("authorization");
+      const token = authHeader?.replace(/^Bearer\s+/i, "");
+      if (token) {
+        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        if (userData?.user) bucket = `user:${userData.user.id}`;
+      }
+      if (!bucket) {
+        const ip = getRequestIP({ xForwardedFor: true }) ?? "unknown";
+        bucket = `ip:${ip}`;
+      }
+
+      const { data: allowed, error } = await supabaseAdmin.rpc("consume_ai_rate_limit", {
+        _bucket_key: bucket,
+        _limit: AI_HOURLY_LIMIT,
+      });
+      if (!error && allowed === false) {
+        return { error: "You've reached the hourly question limit. Please try again later." };
+      }
+    } catch (e) {
+      console.error("rate limit check failed", e);
+    }
+
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

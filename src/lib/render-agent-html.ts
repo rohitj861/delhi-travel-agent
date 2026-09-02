@@ -8,14 +8,67 @@ export function splitReply(raw: string): { summary: string; html: string } {
   return { summary: cleaned.slice(0, idx).trim(), html: rewriteLinks(sanitize(cleaned.slice(idx))) };
 }
 
-/** Minimal sanitizer: drops scripts/iframes/styles and inline event handlers. */
-export function sanitize(html: string): string {
-  return html
-    .replace(/<\s*(script|iframe|style|object|embed|link|meta)[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(script|iframe|style|object|embed|link|meta)[^>]*\/?>/gi, "")
-    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '$1="#"');
+const ALLOWED_TAGS = new Set([
+  "div",
+  "h3",
+  "h4",
+  "p",
+  "a",
+  "strong",
+  "em",
+  "span",
+  "ul",
+  "ol",
+  "li",
+  "br",
+]);
+
+function safeHref(value: string): string | null {
+  const v = value.trim();
+  return /^https?:\/\//i.test(v) ? v : null;
 }
+
+/**
+ * Strict allowlist sanitizer for model-generated HTML: any tag outside the
+ * allowlist is dropped entirely, and only class/href/target/rel survive as
+ * attributes (href limited to http(s)). Prevents script/handler injection.
+ */
+export function sanitize(html: string): string {
+  // Drop dangerous elements together with their text contents first.
+  const stripped = html.replace(
+    /<\s*(script|style|iframe|object|embed|svg|math|template)\b[\s\S]*?<\s*\/\s*\1\s*>/gi,
+    "",
+  );
+  return stripped.replace(
+    /<\/?([a-zA-Z0-9-]+)((?:"[^"]*"|'[^']*'|[^>])*)>/g,
+    (_m, rawTag, rawAttrs) => {
+
+    const tag = String(rawTag).toLowerCase();
+    if (!ALLOWED_TAGS.has(tag)) return "";
+    if (_m.startsWith("</")) return `</${tag}>`;
+
+    const attrs: string[] = [];
+    const attrRe = /([a-zA-Z-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/g;
+    let m: RegExpExecArray | null;
+    while ((m = attrRe.exec(String(rawAttrs))) !== null) {
+      const name = m[1]!.toLowerCase();
+      const value = m[3] ?? m[4] ?? m[5] ?? "";
+      if (name === "class") {
+        attrs.push(`class="${value.replace(/[^a-zA-Z0-9 _-]/g, "")}"`);
+      } else if (name === "href" && tag === "a") {
+        const href = safeHref(value);
+        if (href) attrs.push(`href="${href.replace(/"/g, "&quot;")}"`);
+      } else if (name === "target" || name === "rel") {
+        attrs.push(`${name}="${value.replace(/[^a-zA-Z _-]/g, "")}"`);
+      }
+    }
+      const selfClosing = tag === "br" ? " /" : "";
+      return `<${tag}${attrs.length ? " " + attrs.join(" ") : ""}${selfClosing}>`;
+    },
+  );
+}
+
+
 
 /** URLs known to resolve — deep links outside this list are replaced with searches. */
 const STABLE_URLS = new Set(
@@ -74,10 +127,14 @@ export function rewriteLinks(html: string): string {
       if (!name) return chunk;
       const area = text(/<[^>]*class="[^"]*(?:area|metro|location)[^"]*"[^>]*>([\s\S]*?)<\//i);
       const fallback = searchUrlFor(kind, name, area);
-      return chunk.replace(/href\s*=\s*("|')(.*?)\1/gi, (m2, _q, url: string) => {
+      const withHref = chunk.replace(/<a\b((?:"[^"]*"|'[^']*'|[^>])*)>/gi, (m3, attrs: string) =>
+        /\bhref\s*=/i.test(attrs) ? m3 : `<a href="${fallback}"${attrs}>`,
+      );
+      return withHref.replace(/href\s*=\s*("|')(.*?)\1/gi, (m2, _q, url: string) => {
         const clean = String(url).trim().toLowerCase().replace(/\/$/, "");
         return STABLE_URLS.has(clean) ? m2 : `href="${fallback}"`;
       });
+
     })
     .join("");
 
