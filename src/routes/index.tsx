@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, Send, TrainFront, UserRound } from "lucide-react";
+import { Compass, History, Loader2, Send, TrainFront, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askDelhiAgent } from "@/lib/delhi-agent.functions";
+import { saveTravelQuery } from "@/lib/travel-history.functions";
 import { splitReply } from "@/lib/render-agent-html";
 import { useSession } from "@/hooks/use-session";
 
@@ -41,6 +42,7 @@ const SUGGESTIONS = [
 
 function Index() {
   const ask = useServerFn(askDelhiAgent);
+  const save = useServerFn(saveTravelQuery);
   const { user } = useSession();
 
   const [messages, setMessages] = useState<Msg[]>([]);
