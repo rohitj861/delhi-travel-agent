@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, TrainFront } from "lucide-react";
+import { CheckCircle2, Loader2, TrainFront } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ function AuthPage() {
         });
         if (error) setError(friendly(error.message));
         else if (!data.session)
-          setNotice("Account created. Check your email to confirm before signing in.");
+          setNotice("Check your email to confirm your account before logging in.");
         else navigate({ to: "/", replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -131,7 +131,12 @@ function AuthPage() {
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {notice && <p className="text-sm text-primary">{notice}</p>}
+          {notice && (
+            <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm text-primary">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{notice}</span>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
