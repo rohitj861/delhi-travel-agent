@@ -127,10 +127,14 @@ export function rewriteLinks(html: string): string {
       if (!name) return chunk;
       const area = text(/<[^>]*class="[^"]*(?:area|metro|location)[^"]*"[^>]*>([\s\S]*?)<\//i);
       const fallback = searchUrlFor(kind, name, area);
-      return chunk.replace(/href\s*=\s*("|')(.*?)\1/gi, (m2, _q, url: string) => {
+      const withHref = chunk.replace(/<a\b((?:"[^"]*"|'[^']*'|[^>])*)>/gi, (m3, attrs: string) =>
+        /\bhref\s*=/i.test(attrs) ? m3 : `<a href="${fallback}"${attrs}>`,
+      );
+      return withHref.replace(/href\s*=\s*("|')(.*?)\1/gi, (m2, _q, url: string) => {
         const clean = String(url).trim().toLowerCase().replace(/\/$/, "");
         return STABLE_URLS.has(clean) ? m2 : `href="${fallback}"`;
       });
+
     })
     .join("");
 
