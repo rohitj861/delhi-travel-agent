@@ -109,6 +109,7 @@ function Index() {
                   <span className="max-w-[12rem] truncate">{user.email}</span>
                 </Link>
               </Button>
+              </>
             ) : (
               <Button
                 asChild
