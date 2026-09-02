@@ -1,14 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Compass, History, Loader2, Send, TrainFront, UserRound } from "lucide-react";
+import {
+  BookmarkPlus,
+  Check,
+  Compass,
+  History,
+  Loader2,
+  Map,
+  Send,
+  TrainFront,
+  UserRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askDelhiAgent } from "@/lib/delhi-agent.functions";
 import { saveTravelQuery } from "@/lib/travel-history.functions";
+import { saveTrip } from "@/lib/saved-trips.functions";
 import { splitReply } from "@/lib/render-agent-html";
 import { useSession } from "@/hooks/use-session";
+
 
 
 export const Route = createFileRoute("/")({
@@ -45,13 +57,42 @@ const SUGGESTIONS = [
 function Index() {
   const ask = useServerFn(askDelhiAgent);
   const save = useServerFn(saveTravelQuery);
+  const storeTrip = useServerFn(saveTrip);
   const { user } = useSession();
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tripFormFor, setTripFormFor] = useState<number | null>(null);
+  const [tripName, setTripName] = useState("");
+  const [tripSaving, setTripSaving] = useState(false);
+  const [tripError, setTripError] = useState<string | null>(null);
+  const [savedTrips, setSavedTrips] = useState<Record<number, string>>({});
   const endRef = useRef<HTMLDivElement>(null);
+
+  async function handleSaveTrip(index: number) {
+    const name = tripName.trim();
+    if (!name) {
+      setTripError("Please give this trip a name.");
+      return;
+    }
+    setTripSaving(true);
+    setTripError(null);
+    try {
+      const itinerary = messages[index]?.content ?? "";
+      const destination = messages[index - 1]?.content?.slice(0, 200);
+      await storeTrip({ data: { trip_name: name, destination, itinerary } });
+      setSavedTrips((prev) => ({ ...prev, [index]: name }));
+      setTripFormFor(null);
+      setTripName("");
+    } catch {
+      setTripError("Could not save this trip. Please try again.");
+    } finally {
+      setTripSaving(false);
+    }
+  }
+
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,11 +136,23 @@ function Index() {
                 size="sm"
                 className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
               >
+                <Link to="/trips">
+                  <Map className="h-4 w-4" />
+                  My Trips
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
                 <Link to="/history">
                   <History className="h-4 w-4" />
                   My questions
                 </Link>
               </Button>
+
               <Button
                 asChild
                 variant="secondary"
@@ -173,6 +226,67 @@ function Index() {
                 {html && (
                   <div className="agent-cards" dangerouslySetInnerHTML={{ __html: html }} />
                 )}
+                {user && m.content.includes("itinerary-card") && (
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    {savedTrips[i] ? (
+                      <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-primary" />
+                        Saved as “{savedTrips[i]}”.
+                        <Link to="/trips" className="underline">
+                          View My Trips
+                        </Link>
+                      </p>
+                    ) : tripFormFor === i ? (
+                      <form
+                        className="flex flex-wrap items-center gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveTrip(i);
+                        }}
+                      >
+                        <Input
+                          autoFocus
+                          value={tripName}
+                          onChange={(e) => setTripName(e.target.value)}
+                          placeholder="Name this trip (e.g. Old Delhi day out)"
+                          aria-label="Trip name"
+                          className="max-w-xs"
+                        />
+                        <Button type="submit" size="sm" disabled={tripSaving}>
+                          {tripSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setTripFormFor(null);
+                            setTripError(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        {tripError && (
+                          <span className="w-full text-sm text-destructive">{tripError}</span>
+                        )}
+                      </form>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setTripFormFor(i);
+                          setTripName("");
+                          setTripError(null);
+                        }}
+                      >
+                        <BookmarkPlus className="h-4 w-4" />
+                        Save this trip
+                      </Button>
+                    )}
+                  </div>
+                )}
+
               </article>
             );
           })}
