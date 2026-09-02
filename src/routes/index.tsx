@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, Send, TrainFront, UserRound } from "lucide-react";
+import { Compass, History, Loader2, Send, TrainFront, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askDelhiAgent } from "@/lib/delhi-agent.functions";
+import { saveTravelQuery } from "@/lib/travel-history.functions";
 import { splitReply } from "@/lib/render-agent-html";
 import { useSession } from "@/hooks/use-session";
 
@@ -41,6 +42,7 @@ const SUGGESTIONS = [
 
 function Index() {
   const ask = useServerFn(askDelhiAgent);
+  const save = useServerFn(saveTravelQuery);
   const { user } = useSession();
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -64,7 +66,13 @@ function Index() {
     try {
       const res = await ask({ data: { messages: next } });
       if ("error" in res && res.error) setError(res.error);
-      else setMessages([...next, { role: "assistant", content: res.content ?? "" }]);
+      else {
+        const answer = res.content ?? "";
+        setMessages([...next, { role: "assistant", content: answer }]);
+        if (user && answer) {
+          save({ data: { question: q, answer } }).catch(() => {});
+        }
+      }
     } catch {
       setError("Something went wrong reaching the concierge.");
     } finally {
@@ -78,6 +86,18 @@ function Index() {
         <div className="mx-auto max-w-4xl px-5 py-12">
           <nav className="mb-6 flex items-center justify-end gap-2">
             {user ? (
+              <>
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
+                <Link to="/history">
+                  <History className="h-4 w-4" />
+                  My questions
+                </Link>
+              </Button>
               <Button
                 asChild
                 variant="secondary"
@@ -89,6 +109,7 @@ function Index() {
                   <span className="max-w-[12rem] truncate">{user.email}</span>
                 </Link>
               </Button>
+              </>
             ) : (
               <Button
                 asChild
