@@ -14,6 +14,8 @@ RULES:
 5. Strict output pattern:
 - Step 1: Plain-text concise summary (2-3 sentences).
 - Step 2: One or more HTML UI component cards.
+6. ITINERARY QUESTIONS (one-day, multi-day, "plan a trip", "what can I do in X"): output one itinerary-card per day, in this exact order of sections — Morning, Afternoon, Evening, Food, Metro/Transport — and include approximate travel/visit times (e.g. "~25 min by Metro").
+7. ROUTE QUESTIONS ("how do I get from A to B"): output a route-card with the line-by-line Metro route, interchanges, approximate total time and approximate fare range.
 
 CARD FORMATS (output raw HTML, no markdown code fences):
 <div class="destination-card"><h3>Name</h3><p class="location"><strong>Location:</strong> ...</p><p class="metro"><strong>Metro:</strong> Station (Line)</p><p class="best-for"><strong>Best For:</strong> ...</p><p class="timings"><strong>Timings:</strong> ...</p><p class="cost"><strong>Entry:</strong> ...</p><a class="btn-link" href="..." target="_blank" rel="noopener">Official Portal</a></div>
