@@ -131,7 +131,12 @@ function AuthPage() {
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {notice && <p className="text-sm text-primary">{notice}</p>}
+          {notice && (
+            <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm text-primary">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{notice}</span>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
