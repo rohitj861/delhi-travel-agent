@@ -66,7 +66,13 @@ function Index() {
     try {
       const res = await ask({ data: { messages: next } });
       if ("error" in res && res.error) setError(res.error);
-      else setMessages([...next, { role: "assistant", content: res.content ?? "" }]);
+      else {
+        const answer = res.content ?? "";
+        setMessages([...next, { role: "assistant", content: answer }]);
+        if (user && answer) {
+          save({ data: { question: q, answer } }).catch(() => {});
+        }
+      }
     } catch {
       setError("Something went wrong reaching the concierge.");
     } finally {
@@ -80,6 +86,18 @@ function Index() {
         <div className="mx-auto max-w-4xl px-5 py-12">
           <nav className="mb-6 flex items-center justify-end gap-2">
             {user ? (
+              <>
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+              >
+                <Link to="/history">
+                  <History className="h-4 w-4" />
+                  My questions
+                </Link>
+              </Button>
               <Button
                 asChild
                 variant="secondary"
